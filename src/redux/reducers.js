@@ -1,54 +1,58 @@
 import { combineReducers } from 'redux';
 import actions from './actions';
 
-export const  connectionReducer = (state = {}, action) => {
-        if(action.type === actions.CONNECTION_ESTABLISHED) {
-            console.log(`Connection to stock ticker established`);
-            return {
-                ...state,
-                socket: action.payload.socket
-            }
+const updateStock = (subscribedStocks, message, remove) => {
+    const sym = message.symbol;
+    let stocks = [];
+    let found = -1;
+    for (let i = 0; i < subscribedStocks.length; i++) {
+        stocks.push(subscribedStocks[ i ]);
+        if (subscribedStocks[ i ].symbol === sym) {
+            found = i;
         }
-        return state;
+    }
+    if (!remove && found >= 0 ) {
+        stocks[ found ] = message;
+    }
+    else if ((!remove & found < 0 ) || !subscribedStocks.length){
+        stocks.push(message);
+    }
+    else if (remove && found >= 0) {
+        stocks.splice(found, 1);
     }
 
-export const  channelReducer = (state = {}, action) => {
-        if(action.type === actions.SUBSCRIBE_CHANNEL) {
-            const socket = state.connectionReducer.socket;
-            const channels = action.payload.channel.join(',');
-            try{
-                debugger;
-                socket.emit('subscribe', channels);
-            }
-            catch(err){
-                console.error(err);
-            }
-        }
-        else if(action.type === actions.UNSUBSCRIBE_CHANNEL) {
-            const socket = state.connectionReducer.socket;
-            const channels = action.payload.channel.join(',');            
-            try {
-                socket.emit('unsubscribe', channels);
-            }
-            catch(err){
-                console.error(err);
-            }
-        }
-        return state;
-    }
+    return stocks;
+}
 
-export const  subscribedStocksReducer = (state = { subscribedStocks: []}, action) => {
-        if(action.type === actions.UPDATE_TICKER){            
-            const subscribedStocks = action.payload.message;
+export const connectionReducer = (state = {}, action) => {
+    return state;
+}
 
-            return {
-                ...state,
-                subscribedStocks
-            }
+export const channelReducer = (state = { channels: [] }, action) => {
+    if (action.type === actions.SUBSCRIBE_CHANNEL || action.type === actions.UNSUBSCRIBE_CHANNEL) {
+            const channels = action.payload.subscriptionList;
+
+        return {
+            ...state,
+            channels
         }
-        
-        return state;
+
     }
+    return state;
+}
+
+export const subscribedStocksReducer = (state = { subscribedStocks: [] }, action) => {
+    if (action.type === actions.UPDATE_TICKER) {
+        const { message } = action.payload;
+        const remove = (action.payload.options) && action.payload.options.remove;
+        let  subscribedStocks = updateStock(state.subscribedStocks, message, remove);
+        return {
+            ...state,
+            subscribedStocks
+        }
+    }
+    return state;
+}
 
 const appReducers = combineReducers({
     connectionReducer: connectionReducer,
@@ -83,7 +87,7 @@ export default appReducers;
 //         }
 //         else if(action.type === actions.UNSUBSCRIBE_CHANNEL) {
 //             const socket = state.connectionReducer.socket;
-//             const channels = action.payload.channel.join(',');            
+//             const channels = action.payload.channel.join(',');
 //             try {
 //                 socket.emit('unsubscribe', channels);
 //             }
@@ -94,7 +98,7 @@ export default appReducers;
 //         return state;
 //     },
 //     subscribedStocksReducer(state = { subscribedStocks: []}, action){
-//         if(action.type === actions.UPDATE_TICKER){            
+//         if(action.type === actions.UPDATE_TICKER){
 //             const subscribedStocks = action.payload.message;
 
 //             return {
@@ -102,7 +106,7 @@ export default appReducers;
 //                 subscribedStocks
 //             }
 //         }
-        
+
 //         return state;
 //     }
 

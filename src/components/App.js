@@ -16,12 +16,10 @@ class App extends Component {
     return (
       <Provider store={store}>
         <div className="App">
-          <header className="App-header">
-          </header>
           <main>
             <Ticker />
           </main>
-        </div> 
+        </div>
       </Provider>
     );
   }
