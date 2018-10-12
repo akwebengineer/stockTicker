@@ -5,8 +5,9 @@ let io = null;
 const throttler = (fn, delay) => {
     let timeout = false;
 
-    return function () {
-        let context = this, args = arguments;
+    return function() {
+        let context = this,
+            args = arguments;
         const later = () => {
             timeout = setTimeout(() => {
                 fn.apply(context, args);
@@ -38,10 +39,9 @@ const actionCreators = {
                 dispatch(actionCreators.updateTicker(JSON.parse(message)));
             }
             const throttledIOResponder = throttler(ioResponder, 100);
-            // io.on('message', throttledIOResponder);
-            io.on('message', ioResponder);
-        }
-        catch (err) {
+            io.on('message', throttledIOResponder);
+            // io.on('message', ioResponder);
+        } catch (err) {
             console.error(err);
         }
 
@@ -62,75 +62,54 @@ const actionCreators = {
         if (cachedSubList && cachedSubList.length) {
             cachedSubArr = cachedSubList.split(',');
             const _channels = channel.split(',');
-            const subscriptionSet = new Set([ ...cachedSubArr, ..._channels ]);
+            const subscriptionSet = new Set([...cachedSubArr, ..._channels]);
             for (let item of subscriptionSet) subscriptionList.push(item);
-
-            // if (subscriptionList.indexOf(channel) < 0) {
-            //     subscriptionList.push(channel);
-            // }
-        }
-        else {
+        } else {
             subscriptionList.push(channel);
         }
         localStorage.setItem('subscribedChannels', '');
         localStorage.setItem('subscribedChannels', subscriptionList);
 
-        try{
+        try {
             io.emit('subscribe', channel);
-        }
-        catch(err){
+        } catch (err) {
             console.error(err);
         }
         return {
             type: actions.SUBSCRIBE_CHANNEL,
-            payload: {subscriptionList}
+            payload: { subscriptionList }
         }
-        // return () => ({
-        //     type: actions.SUBSCRIBE_CHANNEL,
-        //     payload: {channel}
-        // })
     },
     unsubscribeChannel(channel, dispatch) {
         const cachedSubList = localStorage.getItem('subscribedChannels');
         let subscriptionList = [];
-
-        // const subscriptionList = localStorage.getItem('subscribedChannels');
         let channels = '';
         if (cachedSubList && cachedSubList.length) {
             subscriptionList = cachedSubList.split(',');
             const ind = subscriptionList.indexOf(channel);
-            if ( ind >= 0) {
+            if (ind >= 0) {
                 subscriptionList.splice(ind, 1);
             }
             localStorage.setItem('subscribedChannels', '');
             localStorage.setItem('subscribedChannels', subscriptionList);
-            dispatch(actionCreators.updateTicker({ symbol: channel }, {remove: true}));
+            dispatch(actionCreators.updateTicker({ symbol: channel }, { remove: true }));
         }
-        try{
+        try {
             io.emit('unsubscribe', channel);
-        }
-        catch(err){
+        } catch (err) {
             console.error(err);
         }
 
         return {
             type: actions.UNSUBSCRIBE_CHANNEL,
-            payload: {subscriptionList}
+            payload: { subscriptionList }
         }
-        // return () => ({
-        //     type: actions.UNSUBSCRIBE_CHANNEL,
-        //     payload: {channel}
-        // })
     },
     updateTicker(message, options) {
         return {
             type: actions.UPDATE_TICKER,
-            payload: {message, options}
+            payload: { message, options }
         }
-        // return () => ({
-        //     type: actions.UPDATE_TICKER,
-        //     payload: {message}
-        // })
     }
 }
 
